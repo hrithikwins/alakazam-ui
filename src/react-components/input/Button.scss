@@ -1,0 +1,325 @@
+@use "../styles/theme";
+
+:local(.button) {
+  height: 32px;
+  min-height: 32px;
+  width: min-content;
+  min-width: 104px;
+  font-weight: 700;
+  font-size: 8px;
+  border-radius: 8px;
+  border-width: 0;
+  border-color: transparent;
+  transition: background-color 0.1s ease-in-out;
+  white-space: nowrap;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid white;
+  box-shadow: 0px 3px 15px rgba(200,200,200,0.5);
+
+  svg {
+    flex-shrink: 0;
+    margin-right: 5.33px;
+  }
+}
+
+:local(.basic) {
+  border: 1px solid white;
+  background-color: theme.$accent6-color;
+  box-shadow: 0px 3px 15px rgba(200,200,200,0.5);
+}
+
+:local(.transparent) {
+  border-color: theme.$background1-color;
+  background-color: theme.$accent6-color;
+  border: 1px solid white;
+  box-shadow: 0px 3px 15px rgba(200,200,200,0.5);
+}
+
+:local(.basic),
+:local(.transparent) {
+  color: theme.$text1-color;
+  border: 2px solid theme.$basic-border-color;
+  background-color: theme.$basic-color;
+
+  svg {
+    color: theme.$text2-color;
+  }
+
+  &:hover {
+    color: theme.$text2-color-hover;
+    background-color: theme.$basic-color-hover;
+  }
+
+  &:active {
+    color: theme.$text2-color-pressed;
+    background-color: theme.$basic-color-pressed;
+  }
+}
+
+:local(.primary) {
+  color: theme.$text5-color;
+  background-color: theme.$accent6-color;
+  border: 1px solid white;
+  box-shadow: 0px 3px 15px rgba(200,200,200,0.5);
+
+  svg {
+    color: theme.$text5-color;
+  }
+
+  &:hover {
+    color: theme.$text5-color-hover;
+    background-color: theme.$accent6-color-hover;
+  }
+
+  &:active {
+    color: theme.$text5-color-pressed;
+    background-color: theme.$accent6-color-pressed;
+  }
+}
+
+:local(.accept) {
+  color: theme.$text5-color;
+  background-color: theme.$accent6-color;
+  border: 1px solid white;
+  box-shadow: 0px 3px 15px rgba(200,200,200,0.5);
+
+  svg {
+    color: theme.$text5-color;
+  }
+
+  &:hover {
+    color: theme.$text5-color-hover;
+    background-color: theme.$accent6-color-hover;
+  }
+
+  &:active {
+    color: theme.$text5-color-pressed;
+    background-color: theme.$accent6-color-pressed;
+  }
+}
+
+:local(.cancel) {
+  color: theme.$primary-color;
+  background-color: theme.$basic-color;
+  border: 1px solid white;
+  box-shadow: 0px 3px 15px rgba(200,200,200,0.5);
+
+  svg {
+    color: theme.$text5-color;
+  }
+
+  &:hover {
+    color: theme.$text5-color-hover;
+    background-color: theme.$accent6-color-hover;
+  }
+
+  &:active {
+    color: theme.$text5-color-pressed;
+    background-color: theme.$accent6-color-pressed;
+  }
+}
+
+:local(.accent1) {
+  color: theme.$text5-color;
+  background-color: theme.$accent6-color;
+  border: 1px solid white;
+  box-shadow: 0px 3px 15px rgba(200,200,200,0.5);
+
+  svg {
+    color: theme.$text5-color;
+  }
+
+  &:hover {
+    color: theme.$text5-color-hover;
+    background-color: theme.$accent6-color-hover;
+  }
+
+  &:active {
+    color: theme.$text5-color-pressed;
+    background-color: theme.$accent6-color-pressed;
+  }
+}
+
+:local(.accent2) {
+  color: theme.$text5-color;
+  background-color: theme.$accent6-color;
+  border: 1px solid white;
+  box-shadow: 0px 3px 15px rgba(200,200,200,0.5);
+
+  svg {
+    color: theme.$text5-color;
+  }
+
+  &:hover {
+    color: theme.$text5-color-hover;
+    background-color: theme.$accent6-color-hover;
+  }
+
+  &:active {
+    color: theme.$text5-color-pressed;
+    background-color: theme.$accent6-color-pressed;
+  }
+}
+
+:local(.accent3) {
+  color: theme.$text5-color;
+  background-color: theme.$accent6-color;
+  border: 1px solid white;
+  box-shadow: 0px 3px 15px rgba(200,200,200,0.5);
+
+  svg {
+    color: theme.$text5-color;
+  }
+
+  &:hover {
+    color: theme.$text5-color-hover;
+    background-color: theme.$accent6-color-hover;
+  }
+
+  &:active {
+    color: theme.$text5-color-pressed;
+    background-color: theme.$accent6-color-pressed;
+  }
+}
+
+:local(.accent4) {
+  color: theme.$text5-color;
+  background-color: theme.$accent6-color;
+  border: 1px solid white;
+  box-shadow: 0px 3px 15px rgba(200,200,200,0.5);
+
+  svg {
+    color: theme.$text5-color;
+  }
+
+  &:hover {
+    color: theme.$text5-color-hover;
+    background-color: theme.$accent6-color-hover;
+  }
+
+  &:active {
+    color: theme.$text5-color-pressed;
+    background-color: theme.$accent6-color-pressed;
+  }
+}
+
+:local(.accent5) {
+  color: theme.$text5-color;
+  background-color: theme.$accent6-color;
+  border: 1px solid white;
+  box-shadow: 0px 3px 15px rgba(200,200,200,0.5);
+
+  svg {
+    color: theme.$text5-color;
+  }
+
+  &:hover {
+    color: theme.$text5-color-hover;
+    background-color: theme.$accent6-color-hover;
+  }
+
+  &:active {
+    color: theme.$text5-color-pressed;
+    background-color: theme.$accent6-color-pressed;
+  }
+}
+
+:local(.accent6) {
+  color: theme.$text5-color;
+  background-color: theme.$accent6-color;
+  border: 1px solid white;
+  box-shadow: 0px 3px 15px rgba(200,200,200,0.5);
+
+  svg {
+    color: theme.$text5-color;
+  }
+
+  &:hover {
+    color: theme.$text5-color-hover;
+    background-color: theme.$accent6-color-hover;
+  }
+
+  &:active {
+    color: theme.$text5-color-pressed;
+    background-color: theme.$accent6-color-pressed;
+  }
+}
+
+:local(.button):disabled {
+  border-color: transparent;
+  cursor: not-allowed;
+  color: theme.$disabled-text-color;
+  opacity: 0.7;
+  background-color: theme.$disabled-bg-color;
+}
+
+:global(.keyboard-user) :local(.button):focus {
+  border-color: transparent;
+}
+
+:local(.sm) {
+  height: 21.33px;
+  min-height: 21.33px;
+  min-width: 66.66px;
+  padding: 0 5.33px;
+}
+
+:local(.lg),
+:local(.xl) {
+  border-radius: 21.33px;
+  padding: 0 32px;
+  font-size: 10.66px;
+}
+
+:local(.lg) {
+  height: 32px;
+}
+
+:local(.xl) {
+  height: 42.66px;
+}
+
+:local(.thin) {
+  min-height: 27.33px;
+  height: 27.33px;
+  &:hover {
+    color: theme.$text5-color-hover;
+  }
+}
+
+:local(.thick) {
+  height: 35.33px;
+}
+
+:local(.signin) {
+  border: 2px solid #007ab8;
+  background-color: transparent;
+  color: #007ab8;
+  box-sizing: border-box;
+  border-radius: 8.66px;
+}
+
+:local(.landing) {
+  border: 2px solid #007ab8;
+  background-color: #007ab8;
+  color: theme.$text5-color;
+  box-sizing: border-box;
+  border-radius: 8.66px;
+  &:hover {
+    background-color: #008bd1;
+  }
+  &:active {
+    background-color: #00699e;
+  }
+}
+
+:local(.text) {
+  border: none;
+  background-color: theme.$transparent;
+  color: theme.$primary-color;
+  padding: 0px;
+  box-sizing: border-box;
+}

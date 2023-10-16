@@ -1,0 +1,45 @@
+@use "../styles/theme";
+
+:local(.toolbar) {
+  height: 36px;
+  display: flex;
+  padding: 6px;
+  background-color: theme.$transparent;
+  position: absolute;
+  bottom:40px;
+  left:0px;
+  right: 0px;
+
+  @media (min-width: theme.$breakpoint-lg) {
+    padding: 12px 24px;
+    justify-content: space-between;
+  }
+}
+
+:local(.content) {
+  display: flex;
+  flex: 1;
+  justify-content: space-around;
+  align-items: center;
+  gap: 0 24px;
+
+  @media (min-width: theme.$breakpoint-lg) {
+    flex: 0;
+  }
+}
+
+:local(.center_content) {
+  position: absolute;
+  display: flex;
+  width: calc(100% - 48px);
+  left: 0;
+  justify-content: center;
+  z-index: -1;
+
+  @media (max-width: theme.$breakpoint-lg) {
+    width: 100%;
+    position: relative;
+    justify-content: space-around;
+    gap: unset;
+  }
+}
