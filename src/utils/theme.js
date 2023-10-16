@@ -1,55 +1,45 @@
 import { waitForDOMContentLoaded } from "./async-utils";
 import { store } from "./store-instance";
 
-// NOTE these should be synchronized with the top of shared.scss
-const DEFAULT_ACTION_COLOR = "#FF3464";
-const DEFAULT_ACTION_COLOR_LIGHT = "#FF74A4";
+const MAIN_PRIMARY_COLOR = "#2a0a5baa";
+const GLASS_EFFECT_COLOR = "#FFFFFFAA";
 
 const DEFAULT_COLORS = {
-  "action-color": DEFAULT_ACTION_COLOR,
-  "action-label-color": DEFAULT_ACTION_COLOR,
-  "action-color-disabled": DEFAULT_ACTION_COLOR_LIGHT,
-  "action-color-highlight": DEFAULT_ACTION_COLOR_LIGHT,
-  "action-text-color": "#FFFFFF",
-  "action-subtitle-color": "#F0F0F0",
-  "notice-background-color": "#2F80ED",
-  "notice-text-color": "#FFFFFF",
-  "favorited-color": "#FFC000",
-  "nametag-color": "#000000",
-  "nametag-volume-color": "#7ED320",
-  "nametag-text-color": "#FFFFFF",
-  "nametag-border-color": "#7ED320",
-  "nametag-border-color-raised-hand": "#FFCD74"
+  "action-color": MAIN_PRIMARY_COLOR,
+  "action-label-color": MAIN_PRIMARY_COLOR,
+  "action-color-disabled": MAIN_PRIMARY_COLOR,
+  "action-color-highlight": MAIN_PRIMARY_COLOR,
+  "action-text-color": MAIN_PRIMARY_COLOR,
+  "action-subtitle-color": MAIN_PRIMARY_COLOR,
+  "notice-background-color": GLASS_EFFECT_COLOR,
+  "notice-text-color": MAIN_PRIMARY_COLOR,
+  "favorited-color": MAIN_PRIMARY_COLOR,
+  "nametag-color": MAIN_PRIMARY_COLOR,
+  "nametag-volume-color": MAIN_PRIMARY_COLOR,
+  "nametag-text-color": MAIN_PRIMARY_COLOR,
+  "nametag-border-color": MAIN_PRIMARY_COLOR,
+  "nametag-border-color-raised-hand": MAIN_PRIMARY_COLOR
 };
 
-const config = (() => {
-  let config = process.env.APP_CONFIG;
+let config = process.env.APP_CONFIG;
 
-  // Storybook includes environment variables as a string
-  // https://storybook.js.org/docs/react/configure/environment-variables
-  if (!config && process.env.STORYBOOK_APP_CONFIG) {
-    config = JSON.parse(process.env.STORYBOOK_APP_CONFIG);
-  }
+if (!config && process.env.STORYBOOK_APP_CONFIG) {
+  config = JSON.parse(process.env.STORYBOOK_APP_CONFIG);
+}
 
-  if (!config) {
-    config = window.APP_CONFIG;
-  }
+if (!config) {
+  config = window.APP_CONFIG;
+}
 
-  if (config?.theme?.error) {
-    console.error(
-      `Custom themes failed to load.\n${config.theme.error}\nIf you are an admin, reconfigure your themes in the admin panel.`
-    );
-  }
-
-  return config;
-})();
+if (config?.theme?.error) {
+  console.error(
+    `Custom themes failed to load.\n${config.theme.error}\nIf you are an admin, reconfigure your themes in the admin panel.`
+  );
+}
 
 const themes = config?.theme?.themes || [];
 
 function getDarkModeQuery() {
-  // window.matchMedia is not available when this module is imported in node.js,
-  // which happens when using `npm run login` for Hubs Cloud customization.
-  // So we return a dummy MediaQueryList instead.
   if (typeof window.matchMedia !== "undefined") {
     return window.matchMedia("(prefers-color-scheme: dark)");
   } else {
@@ -60,11 +50,6 @@ function getDarkModeQuery() {
 function registerDarkModeQuery(changeListener) {
   const darkModeQuery = getDarkModeQuery();
 
-  // This is a workaround for old Safari.
-  // Prior to Safari 14, MediaQueryList is based on EventTarget, so you must use
-  // addListener() and removeListener() to observe media query lists.
-  // https://developer.mozilla.org/en-US/docs/Web/API/MediaQueryList/addListener
-  // We may remove this workaround when no one will use Safari 13 or before.
   if (darkModeQuery.addEventListener) {
     darkModeQuery.addEventListener("change", changeListener);
   } else {
@@ -105,7 +90,6 @@ function getCurrentTheme() {
 
 function getThemeColor(name) {
   const theme = getCurrentTheme();
-  // config?.theme?.[name] ensures legacy variables for nametag colors are taken into account
   return theme?.variables?.[name] || config?.theme?.[name] || DEFAULT_COLORS[name];
 }
 
@@ -114,35 +98,32 @@ function updateTextButtonColors() {
   const actionHoverColor = getThemeColor("action-color-highlight");
 
   if (document.querySelector("#rounded-text-button")) {
-    // NOTE, using the object-based {} setAttribute variant in a-frame
-    // seems to not work in Firefox here -- the entities with the mixins are not
-    // updated.
     document
       .querySelector("#rounded-text-button")
       .setAttribute(
         "text-button",
-        `textHoverColor: ${actionHoverColor}; textColor: ${actionColor}; backgroundColor: #fff; backgroundHoverColor: #aaa;`
+        `textHoverColor: ${actionHoverColor}; textColor: ${actionColor}; backgroundColor: ${GLASS_EFFECT_COLOR}; backgroundHoverColor: ${GLASS_EFFECT_COLOR};`
       );
 
     document
       .querySelector("#rounded-button")
       .setAttribute(
         "text-button",
-        `textHoverColor: ${actionHoverColor}; textColor: ${actionColor}; backgroundColor: #fff; backgroundHoverColor: #aaa;`
+        `textHoverColor: ${actionHoverColor}; textColor: ${actionColor}; backgroundColor: ${GLASS_EFFECT_COLOR}; backgroundHoverColor: ${GLASS_EFFECT_COLOR};`
       );
 
     document
       .querySelector("#rounded-text-action-button")
       .setAttribute(
         "text-button",
-        `textHoverColor: #fff; textColor: #fff; backgroundColor: ${actionColor}; backgroundHoverColor: ${actionHoverColor}`
+        `textHoverColor: ${actionColor}; textColor: ${actionColor}; backgroundColor: ${actionHoverColor}; backgroundHoverColor: ${actionHoverColor}`
       );
 
     document
       .querySelector("#rounded-action-button")
       .setAttribute(
         "text-button",
-        `textHoverColor: #fff; textColor: #fff; backgroundColor: ${actionColor}; backgroundHoverColor: ${actionHoverColor}`
+        `textHoverColor: ${actionColor}; textColor: ${actionColor}; backgroundColor: ${actionHoverColor}; backgroundHoverColor: ${actionHoverColor}`
       );
   }
 }
@@ -164,12 +145,9 @@ function onThemeChanged(listener) {
 
 waitForDOMContentLoaded().then(() => {
   if (process.env.NODE) {
-    // We're running in node.js, which happens when "npm run login" is used, for example,
-    // so don't bother doing anything UI related.
     return;
   }
 
-  // Set initial theme
   const theme = getCurrentTheme();
   if (theme && theme.name.toLowerCase().includes("dark")) {
     document.body.setAttribute("data-theme", "dark");
@@ -193,7 +171,7 @@ function applyThemeToTextButton(el, highlighted) {
   el.setAttribute(
     "text-button",
     "backgroundHoverColor",
-    highlighted ? "#aaa" : getThemeColor("action-color-highlight")
+    highlighted ? GLASS_EFFECT_COLOR : getThemeColor("action-color-highlight")
   );
 }
 

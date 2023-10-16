@@ -1,6 +1,9 @@
 @use "../styles/theme.scss";
 
 :local(.content) {
+    height: 100vh;
+    width: 100vw;
+    background-color: theme.$glass-bg-color;
   padding: 24px 8px;
 
   button {

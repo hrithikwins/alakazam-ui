@@ -54,7 +54,6 @@ export function VideoMenuPrefab() {
   return (
     <entity
       name="Video Menu"
-      objectMenuTransform={{ center: false }}
       videoMenu={{ sliderRef, timeLabelRef, headRef, trackRef, playIndicatorRef, pauseIndicatorRef }}
     >
       <Label

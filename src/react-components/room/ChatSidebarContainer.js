@@ -27,7 +27,7 @@ import { ChatContext } from "./contexts/ChatContext";
 const chatSidebarMessages = defineMessages({
   emmptyRoom: {
     id: "chat-sidebar-container.input-placeholder.empty-room",
-    defaultMessage: "Nobody is here yet..."
+    defaultMessage: "Nobody's here..."
   },
   emmptyRoomBot: {
     id: "chat-sidebar-container.input-placeholder.empty-room-bot",
@@ -35,13 +35,12 @@ const chatSidebarMessages = defineMessages({
   },
   occupants: {
     id: "chat-sidebar-container.input-placeholder.occupants",
-    defaultMessage:
-      "{occupantCount, plural, one {Send message to one other...} other {Send message to {occupantCount} others...} }"
+    defaultMessage: "{occupantCount, plural, one {Send message...} other {To {occupantCount} others...} }"
   },
   occupantsAndBot: {
     id: "chat-sidebar-container.input-placeholder.occupants-and-bot",
     defaultMessage:
-      "{occupantCount, plural, one {Send message to one other and {discordChannels}...} other {Send message to {occupantCount} others and {discordChannels}...} }"
+      "{occupantCount, plural, one {Send message to one other and {discordChannels}...} other {To {occupantCount} others and {discordChannels}...} }"
   },
   textChatOff: {
     id: "chat-sidebar-container.input-send-button.disabled",
@@ -216,13 +215,13 @@ export function ChatSidebarContainer({
                 title={isDisabled && !isCommand ? intl.formatMessage(chatSidebarMessages["textChatOff"]) : undefined}
               />
             )}
-            {canSpawnMessages && (
+            {/* {canSpawnMessages && (
               <SpawnMessageButton
                 disabled={isDisabled}
                 onClick={onSpawnMessage}
                 title={isDisabled ? intl.formatMessage(chatSidebarMessages["textChatOff"]) : undefined}
               />
-            )}
+            )} */}
           </>
         }
       />

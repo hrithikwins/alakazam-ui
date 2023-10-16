@@ -1,9 +1,8 @@
 import { addComponent, defineQuery, enterQuery, entityExists, exitQuery, hasComponent } from "bitecs";
-import { Matrix4, Vector3 } from "three";
+import { Matrix4, Quaternion, Vector3 } from "three";
 import type { HubsWorld } from "../app";
 import {
   EntityStateDirty,
-  ObjectMenuTransform,
   HeldRemoteRight,
   HoveredRemoteRight,
   Interacted,
@@ -11,11 +10,9 @@ import {
   ObjectMenu,
   ObjectMenuTarget,
   RemoteRight,
-  Rigidbody,
-  MediaContentBounds,
-  Deleting
+  Rigidbody
 } from "../bit-components";
-import { anyEntityWith, findAncestorWithComponents } from "../utils/bit-utils";
+import { anyEntityWith, findAncestorWithComponent } from "../utils/bit-utils";
 import { createNetworkedEntity } from "../utils/create-networked-entity";
 import HubChannel from "../utils/hub-channel";
 import type { EntityID } from "../utils/networking-types";
@@ -26,18 +23,21 @@ import { createMessageDatas, isPinned } from "./networking";
 import { TRANSFORM_MODE } from "../components/transform-object-button";
 import { ScalingHandler } from "../components/scale-button";
 import { canPin, setPinned } from "../utils/bit-pinning-helper";
-import { ObjectMenuTransformFlags } from "../inflators/object-menu-transform";
 
 // Working variables.
 const _vec3_1 = new Vector3();
 const _vec3_2 = new Vector3();
+const _quat = new Quaternion();
 const _mat4 = new Matrix4();
 
 let scalingHandler: ScalingHandler | null = null;
 
-export const enum ObjectMenuFlags {
-  Visible = 1 << 0
-}
+// Needs to remember rotating/scaling entity id because
+// rotation/scaling are operated by dragging so that
+// rotation/scaling operation can continue even if the cursor
+// hover off the target entity.
+// TODO: Should this data stored in Component?
+let handlingTargetEid: EntityID = 0;
 
 function clicked(world: HubsWorld, eid: EntityID) {
   return hasComponent(world, Interacted, eid);
@@ -48,22 +48,8 @@ function objectMenuTarget(world: HubsWorld, menu: EntityID, sceneIsFrozen: boole
     return 0;
   }
 
-  // We can have more than one object menu target in the object hierarchy so we need to explicity look
-  // for the media loader entity here. ie. The object menu target in the media loader entity and the
-  // video menu in the video entity
-  // TODO We should use something more meaningful than MediaContentBounds for the media loader root entity
-  // or rename that to something like MediaRoot
-  const target = hoveredQuery(world).map(eid =>
-    findAncestorWithComponents(world, [MediaContentBounds, ObjectMenuTarget], eid)
-  )[0];
-  if (target) {
-    if (hasComponent(world, Deleting, target)) {
-      return 0;
-    } else {
-      ObjectMenu.flags[menu] |= ObjectMenuFlags.Visible;
-      return target;
-    }
-  }
+  const target = hoveredQuery(world).map(eid => findAncestorWithComponent(world, ObjectMenuTarget, eid))[0];
+  if (target) return target;
 
   if (entityExists(world, ObjectMenu.targetRef[menu])) {
     return ObjectMenu.targetRef[menu];
@@ -72,10 +58,39 @@ function objectMenuTarget(world: HubsWorld, menu: EntityID, sceneIsFrozen: boole
   return 0;
 }
 
+function moveToTarget(world: HubsWorld, menu: EntityID) {
+  const targetObj = world.eid2obj.get(ObjectMenu.targetRef[menu])!;
+  targetObj.updateMatrices();
+
+  // TODO: position the menu more carefully...
+  //       For example, if a menu object is just placed at a target
+  //       object's position the menu object can be hidden by a large
+  //       target object or the menu object looks too small for a far
+  //       target object.
+  _mat4.copy(targetObj.matrixWorld);
+
+  // Keeps world scale (1, 1, 1) because
+  // a menu object is a child of a target object
+  // and the target object's scale can be changed.
+  // Another option may be making the menu object
+  // a sibling of the target object.
+  _mat4.decompose(_vec3_1, _quat, _vec3_2);
+  _vec3_2.set(1.0, 1.0, 1.0);
+  _mat4.compose(_vec3_1, _quat, _vec3_2);
+
+  const menuObj = world.eid2obj.get(menu)!;
+  setMatrixWorld(menuObj, _mat4);
+
+  // TODO: Remove the dependency with AFRAME
+  const camera = AFRAME.scenes[0].systems["hubs-systems"].cameraSystem.viewingCamera;
+  camera.updateMatrices();
+  menuObj.lookAt(_vec3_1.setFromMatrixPosition(camera.matrixWorld));
+}
+
 // TODO: startRotation/Scaling() and stopRotation/Scaling() are
 //       temporary implementation that rely on the old systems.
 //       They should be rewritten more elegantly with bitecs.
-function startRotation(world: HubsWorld, menuEid: EntityID, targetEid: EntityID) {
+function startRotation(world: HubsWorld, targetEid: EntityID) {
   if (hasComponent(world, Networked, targetEid)) {
     takeOwnership(world, targetEid);
   }
@@ -86,29 +101,27 @@ function startRotation(world: HubsWorld, menuEid: EntityID, targetEid: EntityID)
   transformSystem.startTransform(world.eid2obj.get(targetEid)!, world.eid2obj.get(rightCursorEid)!, {
     mode: TRANSFORM_MODE.CURSOR
   });
-  ObjectMenu.handlingTargetRef[menuEid] = targetEid;
+  handlingTargetEid = targetEid;
 }
 
-function stopRotation(world: HubsWorld, menuEid: EntityID) {
+function stopRotation(world: HubsWorld) {
   // TODO: More proper handling in case the target entity is already removed.
   //       In the worst scenario the entity has been already recycled at this moment
   //       and this code doesn't handled such a case correctly.
   //       We may refactor when we will reimplement the object menu system
   //       by removing A-Frame dependency.
-  const handlingTargetEid = ObjectMenu.handlingTargetRef[menuEid];
   if (entityExists(world, handlingTargetEid) && hasComponent(world, Networked, handlingTargetEid)) {
     addComponent(world, EntityStateDirty, handlingTargetEid);
   }
   const transformSystem = APP.scene!.systems["transform-selected-object"];
   transformSystem.stopTransform();
-  ObjectMenu.handlingTargetRef[menuEid] = 0;
+  handlingTargetEid = 0;
 }
 
-function startScaling(world: HubsWorld, menuEid: EntityID, targetEid: EntityID) {
+function startScaling(world: HubsWorld, targetEid: EntityID) {
   if (hasComponent(world, Networked, targetEid)) {
     takeOwnership(world, targetEid);
   }
-
   // TODO: Don't use any
   // TODO: Remove the dependency with AFRAME
   const transformSystem = (AFRAME as any).scenes[0].systems["transform-selected-object"];
@@ -118,18 +131,17 @@ function startScaling(world: HubsWorld, menuEid: EntityID, targetEid: EntityID) 
   scalingHandler = new ScalingHandler(world.eid2obj.get(targetEid), transformSystem);
   scalingHandler!.objectToScale = world.eid2obj.get(targetEid);
   scalingHandler!.startScaling(world.eid2obj.get(rightCursorEid));
-  ObjectMenu.handlingTargetRef[menuEid] = targetEid;
+  handlingTargetEid = targetEid;
 }
 
-function stopScaling(world: HubsWorld, menuEid: EntityID) {
-  const handlingTargetEid = ObjectMenu.handlingTargetRef[menuEid];
+function stopScaling(world: HubsWorld) {
   if (entityExists(world, handlingTargetEid) && hasComponent(world, Networked, handlingTargetEid)) {
     addComponent(world, EntityStateDirty, handlingTargetEid);
   }
   const rightCursorEid = anyEntityWith(world, RemoteRight)!;
   scalingHandler!.endScaling(world.eid2obj.get(rightCursorEid));
   scalingHandler = null;
-  ObjectMenu.handlingTargetRef[menuEid] = 0;
+  handlingTargetEid = 0;
 }
 
 function openLink(world: HubsWorld, eid: EntityID) {
@@ -175,7 +187,6 @@ function handleClicks(world: HubsWorld, menu: EntityID, hubChannel: HubChannel) 
   } else if (clicked(world, ObjectMenu.cameraTrackButtonRef[menu])) {
     console.log("Clicked track");
   } else if (clicked(world, ObjectMenu.removeButtonRef[menu])) {
-    ObjectMenu.flags[menu] &= ~ObjectMenuFlags.Visible;
     deleteTheDeletableAncestor(world, ObjectMenu.targetRef[menu]);
   } else if (clicked(world, ObjectMenu.dropButtonRef[menu])) {
     console.log("Clicked drop");
@@ -197,12 +208,10 @@ function handleClicks(world: HubsWorld, menu: EntityID, hubChannel: HubChannel) 
 function handleHeldEnter(world: HubsWorld, eid: EntityID, menuEid: EntityID) {
   switch (eid) {
     case ObjectMenu.rotateButtonRef[menuEid]:
-      ObjectMenu.flags[menuEid] &= ~ObjectMenuFlags.Visible;
-      startRotation(world, menuEid, ObjectMenu.targetRef[menuEid]);
+      startRotation(world, ObjectMenu.targetRef[menuEid]);
       break;
     case ObjectMenu.scaleButtonRef[menuEid]:
-      ObjectMenu.flags[menuEid] &= ~ObjectMenuFlags.Visible;
-      startScaling(world, menuEid, ObjectMenu.targetRef[menuEid]);
+      startScaling(world, ObjectMenu.targetRef[menuEid]);
       break;
   }
 }
@@ -210,43 +219,25 @@ function handleHeldEnter(world: HubsWorld, eid: EntityID, menuEid: EntityID) {
 function handleHeldExit(world: HubsWorld, eid: EntityID, menuEid: EntityID) {
   switch (eid) {
     case ObjectMenu.rotateButtonRef[menuEid]:
-      ObjectMenu.flags[menuEid] |= ObjectMenuFlags.Visible;
-      stopRotation(world, menuEid);
+      stopRotation(world);
       break;
     case ObjectMenu.scaleButtonRef[menuEid]:
-      ObjectMenu.flags[menuEid] |= ObjectMenuFlags.Visible;
-      stopScaling(world, menuEid);
+      stopScaling(world);
       break;
   }
 }
 
 function updateVisibility(world: HubsWorld, menu: EntityID, frozen: boolean) {
   const target = ObjectMenu.targetRef[menu];
-  const visible = !!(target && frozen) && (ObjectMenu.flags[menu] & ObjectMenuFlags.Visible) !== 0;
-
-  // TODO We are handling menus visibility in a similar way for all the object menus, we
-  // should probably refactor this to a common object-menu-visibility-system
-  if (visible) {
-    ObjectMenuTransform.targetObjectRef[menu] = target;
-    ObjectMenuTransform.flags[menu] |= ObjectMenuTransformFlags.Enabled;
-  } else {
-    ObjectMenuTransform.flags[menu] &= ~ObjectMenuTransformFlags.Enabled;
-  }
+  const visible = !!(target && frozen);
 
   const obj = world.eid2obj.get(menu)!;
   obj.visible = visible;
 
-  // Parent visibility doesn't block raycasting, so we must set each button to be invisible
-  // TODO: Ensure that children of invisible entities aren't raycastable
   world.eid2obj.get(ObjectMenu.unpinButtonRef[menu])!.visible = visible && isPinned(target);
   world.eid2obj.get(ObjectMenu.pinButtonRef[menu])!.visible =
     visible && !isPinned(target) && canPin(APP.hubChannel!, target);
-  world.eid2obj.get(ObjectMenu.removeButtonRef[menu])!.visible =
-    visible && !isPinned(target) && APP.hubChannel!.can("spawn_and_move_media");
-  world.eid2obj.get(ObjectMenu.cloneButtonRef[menu])!.visible = visible && APP.hubChannel!.can("spawn_and_move_media");
-  world.eid2obj.get(ObjectMenu.rotateButtonRef[menu])!.visible = visible && APP.hubChannel!.can("spawn_and_move_media");
-  world.eid2obj.get(ObjectMenu.scaleButtonRef[menu])!.visible = visible && APP.hubChannel!.can("spawn_and_move_media");
-  world.eid2obj.get(ObjectMenu.openLinkButtonRef[menu])!.visible = visible;
+  world.eid2obj.get(ObjectMenu.removeButtonRef[menu])!.visible = visible && !isPinned(target);
 
   // Hide unimplemented features for now.
   // TODO: Implement and show the buttons.
@@ -257,6 +248,18 @@ function updateVisibility(world: HubsWorld, menu: EntityID, frozen: boolean) {
   world.eid2obj.get(ObjectMenu.inspectButtonRef[menu])!.visible = false;
   world.eid2obj.get(ObjectMenu.dropButtonRef[menu])!.visible = false;
   world.eid2obj.get(ObjectMenu.refreshButtonRef[menu])!.visible = false;
+
+  [
+    ObjectMenu.openLinkButtonRef[menu],
+    ObjectMenu.cloneButtonRef[menu],
+    ObjectMenu.rotateButtonRef[menu],
+    ObjectMenu.scaleButtonRef[menu]
+  ].forEach(buttonRef => {
+    const buttonObj = world.eid2obj.get(buttonRef)!;
+    // Parent visibility doesn't block raycasting, so we must set each button to be invisible
+    // TODO: Ensure that children of invisible entities aren't raycastable
+    buttonObj.visible = visible;
+  });
 }
 
 const hoveredQuery = defineQuery([HoveredRemoteRight]);
@@ -270,8 +273,7 @@ export function objectMenuSystem(world: HubsWorld, sceneIsFrozen: boolean, hubCh
     handleHeldExit(world, eid, menu);
   });
 
-  const targetEid = objectMenuTarget(world, menu, sceneIsFrozen);
-  ObjectMenu.targetRef[menu] = targetEid;
+  ObjectMenu.targetRef[menu] = objectMenuTarget(world, menu, sceneIsFrozen);
 
   if (ObjectMenu.targetRef[menu]) {
     handleClicks(world, menu, hubChannel);
@@ -283,6 +285,8 @@ export function objectMenuSystem(world: HubsWorld, sceneIsFrozen: boolean, hubCh
     if (scalingHandler !== null) {
       scalingHandler.tick();
     }
+
+    moveToTarget(world, menu);
   }
   updateVisibility(world, menu, sceneIsFrozen);
 }

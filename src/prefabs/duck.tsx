@@ -45,7 +45,6 @@ export function DuckPrefab(): EntityDef {
       }}
       scale={[1, 1, 1]}
       inspectable
-      deletable
     />
   );
 }

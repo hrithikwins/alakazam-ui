@@ -32,7 +32,6 @@ export function LinkHoverMenuPrefab() {
   return (
     <entity
       name="Link Hover Menu"
-      objectMenuTransform
       linkHoverMenu={{
         linkButtonRef: buttonRef
       }}

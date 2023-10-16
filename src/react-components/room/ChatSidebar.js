@@ -15,7 +15,35 @@ import styles from "./ChatSidebar.scss";
 import { formatMessageBody } from "../../utils/chat-message";
 import { FormattedMessage, useIntl, defineMessages, FormattedRelativeTime } from "react-intl";
 import { permissionMessage } from "./PermissionNotifications";
+import MD5 from "crypto-js/md5";
+import { CustomSidebar } from "../sidebar/CustomSidebar";
 
+
+
+function padZero(str, len) {
+  len = len || 2;
+  const zeros = new Array(len).join("0");
+  return (zeros + str).slice(-len);
+}
+
+function getInvertColor(color) {
+  color = color.substring(1);
+  const r = (255 - parseInt(color.substring(0, 2), 16)).toString(16);
+  const g = (255 - parseInt(color.substring(2, 4), 16)).toString(16);
+  const b = (255 - parseInt(color.substring(4, 6), 16)).toString(16);
+
+  return "#" + padZero(r) + padZero(g) + padZero(b);
+}
+
+function getColorByName(sender) {
+  const hash = MD5(sender);
+  const color = "#" + hash.toString().substring(0, 6);
+
+  return {
+    color: color,
+    invertColor: getInvertColor(color)
+  };
+}
 export function SpawnMessageButton(props) {
   return (
     <IconButton className={styles.chatInputIcon} {...props}>
@@ -281,15 +309,55 @@ const logMessages = defineMessages({
 export function formatSystemMessage(entry, intl) {
   switch (entry.type) {
     case "join":
-      return intl.formatMessage(joinedMessages[entry.presence], { name: <b>{entry.name}</b> });
+      return intl.formatMessage(joinedMessages[entry.presence], {
+        name: (
+          <b
+            className={styles.senderName}
+            style={{
+              color: getColorByName(entry.name),
+              backgroundColor: getInvertColor(entry.name),
+              //   textShadow: "0 0 3px #fff, 0 0 5px #fff, 0 0 7px #fff, 0 0 10px #fff",
+              WebkitTextStroke: "1px black"
+            }}
+          >
+            {entry.name}
+          </b>
+        )
+      });
     case "entered":
-      return intl.formatMessage(enteredMessages[entry.presence], { name: <b>{entry.name}</b> });
+      return intl.formatMessage(enteredMessages[entry.presence], {
+        name: (
+          <b
+            className={styles.senderName}
+            style={{
+              color: getColorByName(entry.name),
+              backgroundColor: getInvertColor(entry.name)
+              //   textShadow: "0 0 3px #fff, 0 0 5px #fff, 0 0 7px #fff, 0 0 10px #fff"
+            }}
+          >
+            {entry.name}
+          </b>
+        )
+      });
     case "leave":
       return (
         <FormattedMessage
           id="chat-sidebar.system-message.leave"
           defaultMessage="{name} left."
-          values={{ name: <b>{entry.name}</b> }}
+          values={{
+            name: (
+              <b
+                className={styles.senderName}
+                style={{
+                  color: getColorByName(entry.name),
+                  backgroundColor: getInvertColor(entry.name)
+                  //   textShadow: "0 0 3px #fff, 0 0 5px #fff, 0 0 7px #fff, 0 0 10px #fff"
+                }}
+              >
+                {entry.name}
+              </b>
+            )
+          }}
         />
       );
     case "display_name_changed":
@@ -297,7 +365,32 @@ export function formatSystemMessage(entry, intl) {
         <FormattedMessage
           id="chat-sidebar.system-message.name-change"
           defaultMessage="{oldName} is now known as {newName}"
-          values={{ oldName: <b>{entry.oldName}</b>, newName: <b>{entry.newName}</b> }}
+          values={{
+            oldName: (
+              <b
+                className={styles.senderName}
+                style={{
+                  color: getColorByName(entry.oldName),
+                  backgroundColor: getInvertColor(entry.oldName)
+                  //   textShadow: "0 0 3px `${getInvertColor(entry.oldName)}`, 0 0 5px #fff, 0 0 7px #fff, 0 0 10px #fff"
+                }}
+              >
+                {entry.oldName}
+              </b>
+            ),
+            newName: (
+              <b
+                className={styles.senderName}
+                style={{
+                  color: getColorByName(entry.newName),
+                  backgroundColor: getInvertColor(entry.newName)
+                  //   textShadow: "0 0 3px #fff, 0 0 5px #fff, 0 0 7px #fff, 0 0 10px #fff"
+                }}
+              >
+                {entry.newName}
+              </b>
+            )
+          }}
         />
       );
     case "scene_changed":
@@ -305,7 +398,10 @@ export function formatSystemMessage(entry, intl) {
         <FormattedMessage
           id="chat-sidebar.system-message.scene-change"
           defaultMessage="{name} changed the scene to {sceneName}"
-          values={{ name: <b>{entry.name}</b>, sceneName: <b>{entry.sceneName}</b> }}
+          values={{
+            name: <b className={styles.senderName}>{entry.name}</b>,
+            sceneName: <b className={styles.senderName}>{entry.sceneName}</b>
+          }}
         />
       );
     case "hub_name_changed":
@@ -313,7 +409,10 @@ export function formatSystemMessage(entry, intl) {
         <FormattedMessage
           id="chat-sidebar.system-message.hub-name-change"
           defaultMessage="{name} changed the name of the room to {hubName}"
-          values={{ name: <b>{entry.name}</b>, hubName: <b>{entry.hubName}</b> }}
+          values={{
+            name: <b className={styles.senderName}>{entry.name}</b>,
+            hubName: <b className={styles.senderName}>{entry.hubName}</b>
+          }}
         />
       );
     case "hub_changed":
@@ -321,7 +420,7 @@ export function formatSystemMessage(entry, intl) {
         <FormattedMessage
           id="chat-sidebar.system-message.hub-change"
           defaultMessage="You are now in {hubName}"
-          values={{ hubName: <b>{entry.hubName}</b> }}
+          values={{ hubName: <b className={styles.senderName}>{entry.hubName}</b> }}
         />
       );
     case "log":
@@ -377,19 +476,36 @@ MessageBubble.propTypes = {
   permission: PropTypes.bool
 };
 
-function getMessageComponent(message) {
+function getMessageComponent(sender, timestamp, message) {
   switch (message.type) {
     case "chat": {
       const { formattedBody, monospace, emoji } = formatMessageBody(message.body);
       return (
         <MessageBubble key={message.id} monospace={monospace} emoji={emoji}>
-          {formattedBody}
+          <p className={styles.messageGroupLabel}>
+            <span
+              style={{
+                color: getColorByName(sender),
+                backgroundColor: getInvertColor(sender),
+                // textShadow: "0 0 3px #fff, 0 0 5px #fff, 0 0 7px #fff, 0 0 10px #fff",
+                WebkitTextStroke: "1px black",
+                fontWeight: 800
+              }}
+            >
+              {sender}
+            </span>{" "}
+            : {formattedBody}
+            {/* | <FormattedRelativeTime updateIntervalInSeconds={10}  value={(timestamp - Date.now()) / 1000} /> */}
+          </p>
         </MessageBubble>
       );
     }
     case "video":
       return (
         <MessageBubble key={message.id} media>
+          <p className={styles.messageGroupLabel}>
+            {sender} | <FormattedRelativeTime updateIntervalInSeconds={10} value={(timestamp - Date.now()) / 1000} />
+          </p>
           <video controls src={message.body.src} />
         </MessageBubble>
       );
@@ -397,12 +513,18 @@ function getMessageComponent(message) {
     case "photo":
       return (
         <MessageBubble key={message.id} media>
+          <p className={styles.messageGroupLabel}>
+            {sender} | <FormattedRelativeTime updateIntervalInSeconds={10} value={(timestamp - Date.now()) / 1000} />
+          </p>
           <img src={message.body.src} />
         </MessageBubble>
       );
     case "permission":
       return (
         <MessageBubble key={message.id} media>
+          <p className={styles.messageGroupLabel}>
+            {sender} | <FormattedRelativeTime updateIntervalInSeconds={10} value={(timestamp - Date.now()) / 1000} />
+          </p>
           <img src={message.body.src} />
         </MessageBubble>
       );
@@ -415,10 +537,9 @@ export function ChatMessageGroup({ sent, sender, timestamp, messages }) {
   const intl = useIntl();
   return (
     <li className={classNames(styles.messageGroup, { [styles.sent]: sent })}>
-      <p className={styles.messageGroupLabel}>
-        {sender} | <FormattedRelativeTime updateIntervalInSeconds={10} value={(timestamp - Date.now()) / 1000} />
-      </p>
-      <ul className={styles.messageGroupMessages}>{messages.map(message => getMessageComponent(message, intl))}</ul>
+      <ul className={styles.messageGroupMessages}>
+        {messages.map(message => getMessageComponent(sender, timestamp, message, intl))}
+      </ul>
     </li>
   );
 }
@@ -474,15 +595,18 @@ ChatMessageList.displayName = "ChatMessageList";
 
 export function ChatSidebar({ onClose, children, ...rest }) {
   return (
-    <Sidebar
-      title={<FormattedMessage id="chat-sidebar.title" defaultMessage="Chat" />}
-      beforeTitle={<CloseButton onClick={onClose} />}
-      contentClassName={styles.content}
-      disableOverflowScroll
-      {...rest}
-    >
-      {children}
-    </Sidebar>
+    <div className={styles.chatSidebarStyle}>
+      <CustomSidebar
+        //   title={<FormattedMessage id="chat-sidebar.title" defaultMessage="Chat" />}
+        // title={""}
+        // beforeTitle={<CloseButton onClick={onClose} />}
+        contentClassName={styles.content}
+        disableOverflowScroll
+        {...rest}
+      >
+        {children}
+      </CustomSidebar>
+    </div>
   );
 }
 

@@ -2,12 +2,12 @@
 
 :local(.toolbar-button) {
   border: none;
-  background-color: transparent;
+    background-color: theme.$glass-bg-color;
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 48px;
-
+  width: 39px;
+  border-radius: 15px;
   label {
     cursor: pointer;
     color: theme.$text1-color;
@@ -29,16 +29,14 @@
 
 :local(.icon-container) {
   position: relative;
-  border-radius: 9999px;
-  width: 48px;
-  height: 48px;
+  border-radius: 15px;
+  width: 38px;
+  height: 38px;
   display: flex;
   justify-content: center;
   align-items: center;
-  border: 1px solid theme.$transparent;
   background-color: theme.$transparent;
-
-  transition: background-color 0.1s ease-in-out, border-color 0.1s ease-in-out;
+  transition: background-color 0.1s ease-in-out;
 
   svg {
     color: theme.$toolbar-icon-color;
@@ -61,15 +59,15 @@
 :local(.basic),
 :local(.transparent) {
   :local(.icon-container) {
-    border-color: theme.$toolbar-basic-border-color;
-    background-color: theme.$background1-color;
+    border: theme.$toolbar-basic-border-color;
+    background-color: theme.$glass-bg-color;
     svg {
       color: theme.$toolbar-basic-icon-color;
     }
 
     &:disabled,
     &[disabled] {
-      border-color: theme.$background1-color;
+      border-color: theme.$glass-bg-color;
       background-color: theme.$disabled-bg-color;
       svg {
         color: theme.$disabled-icon-color;
@@ -78,12 +76,12 @@
   }
 
   &:hover :local(.icon-container) {
-    border: 1px solid theme.$toolbar-basic-border-color;
+    border: theme.$toolbar-basic-border-color;
     background-color: theme.$basic-color-hover;
 
     &:disabled,
     &[disabled] {
-      border-color: theme.$transparent;
+      border-color: theme.$glass-bg-color;
       background-color: theme.$disabled-bg-color;
       svg {
         color: theme.$disabled-icon-color;
@@ -92,14 +90,14 @@
   }
 
   &:active :local(.icon-container) {
-    border-color: theme.$basic-color-pressed;
+    border: theme.$basic-color-pressed;
     background-color: theme.$basic-color-pressed;
   }
 
   &:local(.selected) {
     :local(.icon-container) {
-      border-color: transparent;
-      background-color: theme.$toolbar-icon-selected-bg;
+      border: theme.$glass-bg-color;
+      background-color: theme.$glass-bg-color;
     }
     svg {
       color: theme.$toolbar-basic-selected-icon-color;
@@ -111,7 +109,7 @@
 
     &:hover {
       :local(.icon-container) {
-        background-color: theme.$toolbar-basic-color-hover;
+        background-color: theme.$glass-bg-color;
       }
     }
 
@@ -693,7 +691,7 @@
 :local(.right) {
   :local(.icon-container) {
     width: 48px;
-    border-radius: 0px;
+    border-radius: 9999px;
     border-top-right-radius: 9999px;
     border-bottom-right-radius: 9999px;
   }

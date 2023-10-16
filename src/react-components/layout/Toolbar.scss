@@ -1,12 +1,14 @@
 @use "../styles/theme";
 
 :local(.toolbar) {
-  height: 96px;
+  height: 36px;
   display: flex;
-  padding: 12px;
-  background-color: theme.$background1-color;
-  border-top: 1px solid theme.$border1-color;
-  position: relative;
+  padding: 6px;
+  background-color: theme.$transparent;
+  position: absolute;
+  bottom:40px;
+  left:0px;
+  right: 0px;
 
   @media (min-width: theme.$breakpoint-lg) {
     padding: 12px 24px;
@@ -30,6 +32,7 @@
   position: absolute;
   display: flex;
   width: calc(100% - 48px);
+  left: 0;
   justify-content: center;
   z-index: -1;
 

@@ -386,8 +386,6 @@ class UIRoot extends Component {
         }
       }
     });
-
-    if (this.props.forcedVREntryType && this.props.forcedVREntryType.endsWith("_now")) {
       this.props.scene.addEventListener(
         "loading_finished",
         () => {
@@ -396,7 +394,16 @@ class UIRoot extends Component {
         },
         { once: true }
       );
-    }
+      if (this.props.forcedVREntryType && this.props.forcedVREntryType.endsWith("_now")) {
+        this.props.scene.addEventListener(
+          "loading_finished",
+          () => {
+            console.log("Loading has finished. Checking for forced room entry");
+            setTimeout(() => this.handleForceEntry(), 1000);
+          },
+          { once: true }
+        );
+      }
 
     this.playerRig = scene.querySelector("#avatar-rig");
 
@@ -521,6 +528,7 @@ class UIRoot extends Component {
 
   handleForceEntry = () => {
     console.log("Forced entry type: " + this.props.forcedVREntryType);
+    this.enter2D();
 
     if (!this.props.forcedVREntryType) return;
 
@@ -528,7 +536,7 @@ class UIRoot extends Component {
       this.enterDaydream();
     } else if (this.props.forcedVREntryType.startsWith("vr")) {
       this.enterVR();
-    } else if (this.props.forcedVREntryType.startsWith("2d")) {
+    } else if (!this.props.forcedVREntryType.startsWith("2d")) {
       this.enter2D();
     }
   };
@@ -615,6 +623,8 @@ class UIRoot extends Component {
   };
 
   beginOrSkipAudioSetup = () => {
+    this.onAudioReadyButton();
+
     const skipAudioSetup = this.props.forcedVREntryType && this.props.forcedVREntryType.endsWith("_now");
     if (skipAudioSetup) {
       console.log(`Skipping audio setup (forcedVREntryType = ${this.props.forcedVREntryType})`);
@@ -1405,33 +1415,43 @@ class UIRoot extends Component {
                 streaming={streaming}
                 viewport={
                   <>
+                    <ChatSidebarContainer
+                      presences={this.props.presences}
+                      occupantCount={this.occupantCount()}
+                      canSpawnMessages={entered && this.props.hubChannel.can("spawn_and_move_media")}
+                      scene={this.props.scene}
+                      onClose={() => this.setSidebar(null)}
+                      autoFocus={this.state.chatAutofocus}
+                      initialValue={this.state.chatPrefix}
+                    />
                     {!this.state.dialog && renderEntryFlow ? entryDialog : undefined}
                     {!this.props.selectedObject && <CompactMoreMenuButton />}
                     {(!this.props.selectedObject ||
-                      (this.props.breakpoint !== "sm" && this.props.breakpoint !== "md")) && (
-                      <ContentMenu>
-                        {showObjectList && (
-                          <ObjectsMenuButton
-                            active={this.state.sidebarId === "objects"}
-                            onClick={() => this.toggleSidebar("objects")}
+                      (this.props.breakpoint !== "sm" && this.props.breakpoint !== "md")) &&
+                      this.state.isAdmin && (
+                        <ContentMenu>
+                          {showObjectList && (
+                            <ObjectsMenuButton
+                              active={this.state.sidebarId === "objects"}
+                              onClick={() => this.toggleSidebar("objects")}
+                            />
+                          )}
+                          <PeopleMenuButton
+                            active={this.state.sidebarId === "people"}
+                            disabled={isLockedDownDemo}
+                            onClick={!isLockedDownDemo ? () => this.toggleSidebar("people") : null}
+                            presencecount={this.state.presenceCount}
                           />
-                        )}
-                        <PeopleMenuButton
-                          active={this.state.sidebarId === "people"}
-                          disabled={isLockedDownDemo}
-                          onClick={!isLockedDownDemo ? () => this.toggleSidebar("people") : null}
-                          presencecount={this.state.presenceCount}
-                        />
-                        {showECSObjectsMenuButton && (
-                          <ECSDebugMenuButton
-                            active={this.state.sidebarId === "ecs-debug"}
-                            onClick={() => this.toggleSidebar("ecs-debug")}
-                          />
-                        )}
-                      </ContentMenu>
-                    )}
+                          {showECSObjectsMenuButton && (
+                            <ECSDebugMenuButton
+                              active={this.state.sidebarId === "ecs-debug"}
+                              onClick={() => this.toggleSidebar("ecs-debug")}
+                            />
+                          )}
+                        </ContentMenu>
+                      )}
                     {!entered && !streaming && !isMobile && streamerName && <SpectatingLabel name={streamerName} />}
-                    {this.props.activeObject && (
+                    {this.props.activeObject && this.state.isAdmin && (
                       <ObjectMenuContainer
                         hubChannel={this.props.hubChannel}
                         scene={this.props.scene}
@@ -1495,17 +1515,6 @@ class UIRoot extends Component {
                 sidebar={
                   this.state.sidebarId ? (
                     <>
-                      {this.state.sidebarId === "chat" && (
-                        <ChatSidebarContainer
-                          presences={this.props.presences}
-                          occupantCount={this.occupantCount()}
-                          canSpawnMessages={entered && this.props.hubChannel.can("spawn_and_move_media")}
-                          scene={this.props.scene}
-                          onClose={() => this.setSidebar(null)}
-                          autoFocus={this.state.chatAutofocus}
-                          initialValue={this.state.chatPrefix}
-                        />
-                      )}
                       {this.state.sidebarId === "objects" && (
                         <ObjectsSidebarContainer
                           hubChannel={this.props.hubChannel}
@@ -1521,7 +1530,7 @@ class UIRoot extends Component {
                           history={this.props.history}
                           mySessionId={this.props.sessionId}
                           presences={this.props.presences}
-                          onClose={() => this.setSidebar(null)}
+                          onClose={() => this.setSidebar("chat")}
                           onCloseDialog={() => this.closeDialog()}
                           showNonHistoriedDialog={this.showNonHistoriedDialog}
                           performConditionalSignIn={this.props.performConditionalSignIn}
@@ -1627,44 +1636,32 @@ class UIRoot extends Component {
                         {!isLockedDownDemo && (
                           <>
                             <AudioPopoverButtonContainer scene={this.props.scene} />
-                            <SharePopoverContainer scene={this.props.scene} hubChannel={this.props.hubChannel} />
-                            <PlacePopoverContainer
+                            {/* <SharePopoverContainer scene={this.props.scene} hubChannel={this.props.hubChannel} /> */}
+                            {/* <PlacePopoverContainer
                               scene={this.props.scene}
                               hubChannel={this.props.hubChannel}
                               mediaSearchStore={this.props.mediaSearchStore}
                               showNonHistoriedDialog={this.showNonHistoriedDialog}
-                            />
+                            /> */}
                           </>
                         )}
-                        {this.props.hubChannel.can("spawn_emoji") && (
+                        {/* {this.props.hubChannel.can("spawn_emoji") && (
                           <ReactionPopoverContainer
                             scene={this.props.scene}
                             initialPresence={getPresenceProfileForSession(this.props.presences, this.props.sessionId)}
                           />
-                        )}
+                        )} */}
                       </>
                     )}
-                    {!isLockedDownDemo && (
+                    {/* {!isLockedDownDemo && (
                       <ChatToolbarButton
                         onClick={() => this.toggleSidebar("chat", { chatPrefix: "", chatAutofocus: false })}
                         selected={this.state.sidebarId === "chat"}
                       />
-                    )}
+                    )} */}
                     {entered && isMobileVR && (
                       <ToolbarButton
                         className={styleUtils.hideLg}
-                        icon={<VRIcon />}
-                        preset="accept"
-                        label={<FormattedMessage id="toolbar.enter-vr-button" defaultMessage="Enter VR" />}
-                        onClick={() => exit2DInterstitialAndEnterVR(true)}
-                      />
-                    )}
-                  </>
-                }
-                toolbarRight={
-                  <>
-                    {entered && isMobileVR && (
-                      <ToolbarButton
                         icon={<VRIcon />}
                         preset="accept"
                         label={<FormattedMessage id="toolbar.enter-vr-button" defaultMessage="Enter VR" />}
@@ -1690,7 +1687,19 @@ class UIRoot extends Component {
                         }}
                       />
                     )}
-                    <MoreMenuPopoverButton menu={moreMenu} />
+                    {this.state.isAdmin && <MoreMenuPopoverButton menu={moreMenu} />}
+                  </>
+                }
+                toolbarRight={
+                  <>
+                    {entered && isMobileVR && (
+                      <ToolbarButton
+                        icon={<VRIcon />}
+                        preset="accept"
+                        label={<FormattedMessage id="toolbar.enter-vr-button" defaultMessage="Enter VR" />}
+                        onClick={() => exit2DInterstitialAndEnterVR(true)}
+                      />
+                    )}
                   </>
                 }
               />

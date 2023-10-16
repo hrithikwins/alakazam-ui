@@ -1,11 +1,19 @@
 @use "../styles/theme.scss";
 
-:local(.chat-input-container) {
-  padding: 8px 16px;
-  background-color: theme.$input-bg-color;
-  flex-basis: max-content;
-}
 
+
+
+
+
+:local(.chat-input-container) {
+  padding: 2px 4px;
+  background-color: theme.$glass-bg-color;
+  flex-basis: max-content;
+  height: 50%;
+}
+:local(.sender-name){
+    font-size: 130%;
+}
 :local(.message-list) {
   display: flex;
   flex-grow: 1;
@@ -14,6 +22,9 @@
   padding: 0 16px;
   overflow-y: auto;
   min-height: 0;
+  background-color: #274078c4;
+
+
 }
 
 :local(.message-group) {
@@ -21,7 +32,7 @@
   flex-direction: column;
   flex-shrink: 0;
   width: 100%;
-  padding-top: 16px;
+//   padding-top: 16px;
 
   &:last-child {
     padding-bottom: 8px;
@@ -29,7 +40,7 @@
 }
 
 :local(.message-group-label) {
-  color: theme.$text2-color;
+  color: theme.$green;
   font-size: theme.$font-size-xs;
   display: flex;
   margin: 2px;
@@ -41,11 +52,11 @@
 }
 
 :local(.message-bubble) {
-  background-color: theme.$chat-bubble-bg-color-received;
+  background-color: theme.$transparent;
   border-radius: 19px;
   margin: 2px;
-  padding: 10px 16px;
-  max-width: 80%;
+//   padding: 10px 16px;
+  max-width: 100%;
   width: max-content;
   font-size: theme.$font-size-md;
   overflow-wrap: break-word;
@@ -64,13 +75,13 @@
 
 :local(.sent) {
   :local(.message-group-label) {
-    align-self: flex-end;
+    align-self: flex-start;
   }
 
   :local(.message-bubble) {
-    background-color: theme.$chat-bubble-bg-color-sent;
+    // background-color: theme.$chat-bubble-bg-color-sent;
     color: theme.$chat-bubble-text-color-sent;
-    align-self: flex-end;
+    align-self: flex-start;
 
     a {
       color: theme.$chat-bubble-text-color-sent;
@@ -147,7 +158,7 @@
 }
 
 :local(.chat-input-text-area-styles) {
-  max-height: 50vh;
+  max-height: 20vh;
 }
 
 :local(.emojiPopover) {
